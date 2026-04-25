@@ -1,0 +1,28 @@
+name: Hourly Update
+on:
+  schedule:
+    - cron: '0 * * * *'  # Runs at the start of every hour
+  workflow_dispatch:      # Allows manual trigger for testing
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install Dependencies
+        run: pip install google-genai
+      - name: Update News
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python update_news.py
+      - name: Deploy to Pages
+        run: |
+          git config --global user.name 'News-Bot'
+          git config --global user.email 'bot@github.com'
+          git add index.html
+          git commit -m "Update news: $(date)"
+          git push
