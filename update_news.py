@@ -46,11 +46,28 @@ def clean_text(text):
     return text.strip()
 
 def extract_section(full_text, tag):
-    """Regex to pull content between [[TAG]] markers."""
+    """Extracts content between [[TAG]] markers using string slicing."""
     if not full_text: return ""
-    pattern = f"\\Q[[{tag}]]\\E(.*?)(?=\\[\\[|$)"
-    match = re.search(pattern, full_text, re.DOTALL | re.IGNORECASE)
-    return clean_text(match.group(1)) if match else ""
+    
+    start_marker = f"[[{tag}]]"
+    # We look for the start of the next tag or the end of the string
+    try:
+        if start_marker not in full_text:
+            return ""
+        
+        start_idx = full_text.find(start_marker) + len(start_marker)
+        # Find where the next section starts by looking for '[[' after our start
+        end_idx = full_text.find("[[", start_idx)
+        
+        if end_idx == -1:
+            content = full_text[start_idx:]
+        else:
+            content = full_text[start_idx:end_idx]
+            
+        return clean_text(content)
+    except Exception as e:
+        print(f"Error parsing section {tag}: {e}")
+        return ""
 
 def generate_pages(data):
     pages = {
