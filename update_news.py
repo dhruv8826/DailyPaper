@@ -12,30 +12,22 @@ from google.genai import types
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 def load_data():
-    """Initializes or loads the stateful data.json database."""
     default_structure = {
         "last_updated": {},
         "page8_timeline": [],
-        "page8_topic": "Global Geopolitics",
-        "sections": {
-            "all_news": "",
-            "gems": ""
-        }
+        "page8_topic": "Security Incident at White House Correspondents Dinner",
+        "sections": {}
     }
     if os.path.exists('data.json'):
         try:
             with open('data.json', 'r') as f:
                 data = json.load(f)
-                for key, val in default_structure.items():
-                    if key not in data: 
-                        data[key] = val
                 return data
         except: 
             return default_structure
     return default_structure
 
 def get_gemini_news(prompt, max_retries=5):
-    """Fetch with exponential backoff and non-grounded fallback."""
     model_id = "gemini-3.1-flash-lite-preview"
     for attempt in range(max_retries):
         try:
@@ -47,123 +39,57 @@ def get_gemini_news(prompt, max_retries=5):
                     tools=[types.Tool(google_search=types.GoogleSearch())]
                 )
             )
-            return response.text
+            # Robust JSON extraction
+            match = re.search(r'\{.*\}', response.text, re.DOTALL)
+            if match:
+                return json.loads(match.group())
         except Exception as e:
-            err_msg = str(e).upper()
-            if "503" in err_msg or "UNAVAILABLE" in err_msg or "429" in err_msg:
-                wait_time = (2 ** attempt) + random.uniform(0, 1)
-                print(f"Retrying in {wait_time:.2f}s...")
-                time.sleep(wait_time)
-            else:
-                print(f"Permanent Error: {e}")
-                break
-
-    print("Attempting final non-grounded fallback...")
-    try:
-        fallback = client.models.generate_content(
-            model=model_id,
-            contents=prompt + " (Search unavailable, use internal knowledge)"
-        )
-        return fallback.text
-    except:
-        return None
-
-def clean_text(text):
-    """Strips Markdown artifacts."""
-    if not text: return ""
-    text = re.sub(r'[*#]', '', text)
-    return text.replace("```html", "").replace("```", "").strip()
-
-def extract_section(full_text, tag):
-    """Regex extraction to handle bolding or spacing in AI tags."""
-    if not full_text: return ""
-    pattern = rf"(?:\*\*|)\s*\[\[\s*{tag}\s*\]\]\s*(?:\*\*|)"
-    match = re.search(pattern, full_text, re.IGNORECASE)
-    if not match: return ""
-    start_idx = match.end()
-    next_tag = full_text.find("[[", start_idx)
-    content = full_text[start_idx:] if next_tag == -1 else full_text[start_idx:next_tag]
-    return clean_text(content)
-
-def should_upd(current_data, key, hrs):
-    """Timestamp checker."""
-    last = current_data.get("last_updated", {}).get(key)
-    if not last: return True
-    try:
-        last_time = datetime.datetime.fromisoformat(last)
-        return (datetime.datetime.now() - last_time).total_seconds() >= hrs * 3600
-    except: return True
+            print(f"Retry {attempt+1}: {e}")
+            time.sleep(2 ** attempt)
+    return None
 
 def generate_pages(data):
-    """Generates 8 static HTML files with a universal format-agnostic splitter."""
     pages = {
         "index": "Front Page", "markets": "Share Market", "business": "Trade & Tech",
         "gems": "Undervalued Gems", "world": "World News", "india": "Indian News",
         "misc": "Miscellaneous", "live": "Live Tracker"
     }
-    tag_map = {
+    key_map = {
         "markets": "MARKETS", "business": "TRADE_TECH", "world": "WORLD", 
         "india": "INDIA", "misc": "MISC", "gems": "GEMS"
     }
 
     nav = "<nav>" + " | ".join([f'<a href="{s}.html">{t}</a>' for s, t in pages.items()]) + "</nav>"
-    all_content = data["sections"].get("all_news", "")
+    sections = data.get("sections", {})
 
     for slug, title in pages.items():
         html_body = ""
         
         if slug == "index":
-            # --- INDEX: Extract headlines from anything that looks like a new item ---
-            html_body = "<ul>"
-            news_block = all_content.split("[[GEMS]]")[0] if "[[GEMS]]" in all_content else all_content
-            # Split by newlines OR bullets OR numbers
-            raw_lines = re.split(r'\n|\*|\d+\.', news_block)
             headlines = []
-            for line in raw_lines:
-                clean_h = line.strip()
-                if 25 < len(clean_h) < 220 and "[[" not in clean_h:
-                    # Take only the first sentence for the index
-                    first_sent = clean_h.split('. ')[0].strip()
-                    headlines.append(first_sent)
-            
-            for h in list(dict.fromkeys(headlines))[:15]:
-                html_body += f"<li>{h}</li>"
-            html_body += "</ul>"
+            for k in ["MARKETS", "WORLD", "INDIA", "TRADE_TECH"]:
+                cat_list = sections.get(k, [])
+                if cat_list and isinstance(cat_list, list):
+                    headlines.append(cat_list[0])
+            html_body = "<ul>" + "".join([f"<li>{h}</li>" for h in headlines]) + "</ul>"
 
         elif slug == "live":
             html_body = f"<h2>Topic: {data.get('page8_topic')}</h2>"
-            for item in data.get("page8_timeline", []):
+            for item in data.get('page8_timeline', []):
                 html_body += f"<div class='update'><strong>{item['time']}</strong>: {item['text']}</div><hr>"
 
         else:
-            # --- SECTIONS: Robust Universal Splitter ---
-            tag = tag_map.get(slug)
-            content = extract_section(all_content, tag)
-            
-            # If extracting from all_news failed for GEMS, use the backup key
-            if slug == "gems" and (not content or len(content) < 50):
-                content = data["sections"].get("gems", "")
-
-            # Split by: Double Newline OR Single Newline OR Asterisk OR Numbers (1.)
-            # This ensures we catch every possible way the AI formats the list.
-            blocks = re.split(r'\n\n|\n|\*|\d+\.', content)
-            
-            for b in blocks:
-                clean_b = b.strip()
-                if len(clean_b) > 35:
-                    # Create search URL from first few words
-                    search_query = urllib.parse.quote(clean_b[:70])
-                    search_url = f"https://www.google.com/search?q={search_query}"
-                    
-                    html_body += f"""
-                    <div class='news-block'>
-                        <p>{clean_b}</p>
-                        <a href='{search_url}' target='_blank' style='font-size:0.8em;'>Verify on Google ↗</a>
-                    </div><hr>"""
+            items = sections.get(key_map.get(slug), [])
+            if not items:
+                html_body = "<p>Updating research... check back in a moment.</p>"
+            else:
+                for item in items:
+                    search_url = f"https://www.google.com/search?q={urllib.parse.quote(item[:80])}"
+                    html_body += f"<div class='news-block'><p>{item}</p><a href='{search_url}' target='_blank'>Verify ↗</a></div><hr>"
 
         full_html = f"""<!DOCTYPE html><html><head><link rel="stylesheet" href="style.css">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            </head><body><div class="paper"><header><h1>THE HOURLY JOURNAL</h1>{nav}</header><hr>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+            <body><div class="paper"><header><h1>THE HOURLY JOURNAL</h1>{nav}</header><hr>
             <main><h2>{title}</h2>{html_body}</main>
             <footer>Updated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}</footer>
             </div></body></html>"""
@@ -176,51 +102,72 @@ def main():
     now = datetime.datetime.now()
 
     if should_upd(data, "global_sync", 1):
-        print("Starting Global Sync...")
-        has_no_gems = not data["sections"].get("gems") or "Researching" in data["sections"].get("gems")
-        include_gems = "Also include [[GEMS]] section with 5 undervalued Indian stocks." if (should_upd(data, "daily_gems", 24) or has_no_gems) else ""
+        # DETAILED GEMS LOGIC: Check for 24h update or empty section
+        has_no_gems = not data.get("sections", {}).get("GEMS")
+        include_gems_instruction = ""
+        if (should_upd(data, "daily_gems", 24) or has_no_gems):
+            include_gems_instruction = """
+            [[GEMS]]: Perform deep qualitative research for 5 Indian stocks. 
+            CRITERIA: Focus on hidden companies or companies that are in news or have something great happening suddenly. 
+            Prioritize low P/E stocks benefiting from the recent policies of the government
+            and 'Make in India' PLI schemes. Provide 1-sentence logic per stock. No disclaimers.
+            """
+
+        mega_prompt = f"""
+        Return a JSON dictionary for these categories. Search for latest 2026 data.
         
-        prompt = f"""
-        Search and provide news for these sections. 
-        Wrap each section in [[TAGS]].
-        
-        [[MARKETS]], [[TRADE_TECH]], [[WORLD]], [[INDIA]], [[MISC]], [[LIVE]] (1-sentence on {data['page8_topic']}).
-        {include_gems}
-        
-        STRICT FORMATTING RULES:
-        1. Every news story MUST be its own paragraph.
-        2. Use a DOUBLE NEWLINE between every story.
-        3. Start every story with a bullet point (*).
-        4. NO markdown symbols like **bolding** or # headers.
-        5. Use only plain text summaries.
-        
-        Example format:
-        [[INDIA]]
-        * First news story summary goes here.
-        
-        * Second news story summary goes here.
+        [[MARKETS]]: Top 10 World/India market shifts (Sensex, Nifty, US Tech earnings).
+        [[TRADE_TECH]]: Top 10 Tech news (AI regulation, Nvidia/Microsoft shifts, global supply chains).
+        [[WORLD]]: Top 10 Geopolitics (Middle East, US Elections, Energy transit).
+        [[INDIA]]: Top 10 domestic policy or infrastructure updates.
+        [[MISC]]: Top 10 Sports (IPL/T20) or Entertainment stories.
+        [[LIVE_UPDATE]]: 1-sentence summary of: {data['page8_topic']}.
+        [[NEW_TOPIC]]: Only provide if a new massive topic has emerged.
+        {include_gems_instruction}
+
+        JSON OUTPUT FORMAT:
+        {{
+            "MARKETS": ["story1", "story2", ...],
+            "TRADE_TECH": ["story1", "story2", ...],
+            "WORLD": ["story1", "story2", ...],
+            "INDIA": ["story1", "story2", ...],
+            "MISC": ["story1", "story2", ...],
+            "LIVE_UPDATE": "text",
+            "NEW_TOPIC": "text or null",
+            "GEMS": ["stock1", "stock2", ...]
+        }}
         """
 
-        res = get_gemini_news(prompt)
-        if res:
-            data["sections"]["all_news"] = res
-            if "[[GEMS]]" in res:
-                data["sections"]["gems"] = extract_section(res, "GEMS")
+        news_json = get_gemini_news(mega_prompt)
+        if news_json:
+            # We preserve the old GEMS if the new response doesn't include them
+            if not news_json.get("GEMS"):
+                news_json["GEMS"] = data.get("sections", {}).get("GEMS", [])
+            else:
                 data["last_updated"]["daily_gems"] = now.isoformat()
+
+            data["sections"] = news_json
             
-            live_update = extract_section(res, "LIVE")
-            if "NEW_TOPIC:" in live_update:
-                data["page8_topic"] = live_update.split("NEW_TOPIC:")[1].split('\n')[0].strip()
-                data["page8_timeline"] = [{"time": now.strftime("%H:%M"), "text": clean_text(live_update)}]
-            elif live_update:
-                data["page8_timeline"].insert(0, {"time": now.strftime("%H:%M"), "text": clean_text(live_update)})
+            # Handle Live Tracker Timeline
+            live_text = news_json.get("LIVE_UPDATE", "")
+            if news_json.get("NEW_TOPIC"):
+                data["page8_topic"] = news_json["NEW_TOPIC"]
+                data["page8_timeline"] = [{"time": now.strftime("%H:%M"), "text": live_text}]
+            else:
+                data["page8_timeline"].insert(0, {"time": now.strftime("%H:%M"), "text": live_text})
             
             data["page8_timeline"] = data["page8_timeline"][:24]
             data["last_updated"]["global_sync"] = now.isoformat()
+            
             with open('data.json', 'w') as f:
                 json.dump(data, f, indent=4)
     
     generate_pages(data)
+
+def should_upd(data, key, hrs):
+    last = data.get("last_updated", {}).get(key)
+    if not last: return True
+    return (datetime.datetime.now() - datetime.datetime.fromisoformat(last)).total_seconds() >= hrs * 3600
 
 if __name__ == "__main__":
     main()
