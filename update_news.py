@@ -95,7 +95,7 @@ def should_upd(current_data, key, hrs):
     except: return True
 
 def generate_pages(data):
-    """Generates 8 static HTML files with robust formatting."""
+    """Generates 8 static HTML files with a universal format-agnostic splitter."""
     pages = {
         "index": "Front Page", "markets": "Share Market", "business": "Trade & Tech",
         "gems": "Undervalued Gems", "world": "World News", "india": "Indian News",
@@ -113,16 +113,18 @@ def generate_pages(data):
         html_body = ""
         
         if slug == "index":
-            # --- INDEX LOGIC: Find lines starting with * ---
+            # --- INDEX: Extract headlines from anything that looks like a new item ---
             html_body = "<ul>"
             news_block = all_content.split("[[GEMS]]")[0] if "[[GEMS]]" in all_content else all_content
-            lines = [l.strip() for l in news_block.split('\n') if l.strip()]
+            # Split by newlines OR bullets OR numbers
+            raw_lines = re.split(r'\n|\*|\d+\.', news_block)
             headlines = []
-            for line in lines:
-                if line.startswith('*'):
-                    clean_h = line.lstrip('*').strip()
-                    if 25 < len(clean_h) < 250:
-                        headlines.append(clean_h)
+            for line in raw_lines:
+                clean_h = line.strip()
+                if 25 < len(clean_h) < 220 and "[[" not in clean_h:
+                    # Take only the first sentence for the index
+                    first_sent = clean_h.split('. ')[0].strip()
+                    headlines.append(first_sent)
             
             for h in list(dict.fromkeys(headlines))[:15]:
                 html_body += f"<li>{h}</li>"
@@ -134,23 +136,29 @@ def generate_pages(data):
                 html_body += f"<div class='update'><strong>{item['time']}</strong>: {item['text']}</div><hr>"
 
         else:
-            # --- SECTION LOGIC: Split by Asterisk (*) ---
+            # --- SECTIONS: Robust Universal Splitter ---
             tag = tag_map.get(slug)
             content = extract_section(all_content, tag)
             
-            # Split by asterisk to catch every bullet point as a new block
-            blocks = content.split('*')
+            # If extracting from all_news failed for GEMS, use the backup key
+            if slug == "gems" and (not content or len(content) < 50):
+                content = data["sections"].get("gems", "")
+
+            # Split by: Double Newline OR Single Newline OR Asterisk OR Numbers (1.)
+            # This ensures we catch every possible way the AI formats the list.
+            blocks = re.split(r'\n\n|\n|\*|\d+\.', content)
             
             for b in blocks:
                 clean_b = b.strip()
-                if len(clean_b) > 40:
-                    search_query = urllib.parse.quote(clean_b[:60])
+                if len(clean_b) > 35:
+                    # Create search URL from first few words
+                    search_query = urllib.parse.quote(clean_b[:70])
                     search_url = f"https://www.google.com/search?q={search_query}"
                     
                     html_body += f"""
                     <div class='news-block'>
                         <p>{clean_b}</p>
-                        <a href='{search_url}' target='_blank' style='font-size:0.8em;'>Verify ↗</a>
+                        <a href='{search_url}' target='_blank' style='font-size:0.8em;'>Verify on Google ↗</a>
                     </div><hr>"""
 
         full_html = f"""<!DOCTYPE html><html><head><link rel="stylesheet" href="style.css">
