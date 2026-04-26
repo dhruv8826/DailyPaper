@@ -128,10 +128,12 @@ def main():
         include_gems_instruction = ""
         if (should_upd(data, "daily_gems", 24) or has_no_gems):
             include_gems_instruction = """
-            [[GEMS]]: Perform deep qualitative research for 5 Indian stocks. 
+            [[GEMS]]: Perform deep qualitative research and find 5 'Undervalued Indian Gems' ONLY. 
+            STRICT RITERIA: Must be listed on NSE/BSE.
             CRITERIA: Focus on hidden companies or companies that are in news or have something great happening suddenly. 
             Prioritize low P/E stocks benefiting from the recent policies of the government
             and 'Make in India' PLI schemes. Provide 1-sentence logic per stock. No disclaimers.
+            Format each as: 'Company Name (TICKER): 1-sentence qualitative investment logic.
             """
 
         mega_prompt = f"""
@@ -188,7 +190,21 @@ def main():
 def should_upd(data, key, hrs):
     last = data.get("last_updated", {}).get(key)
     if not last: return True
-    return (datetime.datetime.now() - datetime.datetime.fromisoformat(last)).total_seconds() >= hrs * 3600
+    try:
+        # Use a timezone-aware 'now' for the comparison
+        now = datetime.datetime.now(datetime.timezone.utc)
+        last_time = datetime.datetime.fromisoformat(last)
+        
+        # Ensure last_time is also UTC for a fair comparison
+        if last_time.tzinfo is not None:
+            last_time = last_time.astimezone(datetime.timezone.utc)
+        else:
+            last_time = last_time.replace(tzinfo=datetime.timezone.utc)
+            
+        return (now - last_time).total_seconds() >= hrs * 3600
+    except Exception as e:
+        print(f"Time check error: {e}")
+        return True
 
 if __name__ == "__main__":
     main()
