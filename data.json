@@ -1,98 +1,90 @@
 {
     "last_updated": {
         "hourly_core": "2026-04-20T19:00:17.942627",
-        "daily_gems": "2026-04-26T15:50:01.388545",
+        "daily_gems": "2026-04-26T21:47:00.511442+05:30",
         "news_top": "2026-04-20T19:00:17.942627",
         "finance_tech": "2026-04-20T22:40:46.398809",
         "general_news": "2026-04-20T22:40:46.398809",
         "gems": "2026-04-20T19:25:14.569477",
         "live": "2026-04-20T22:40:46.398809",
-        "global_sync": "2026-04-26T15:50:01.388545"
+        "global_sync": "2026-04-26T21:47:00.511442+05:30"
     },
     "page8_timeline": [
         {
-            "time": "15:50",
-            "text": "President Trump was safely evacuated from the White House Correspondents Association dinner on Saturday night after an armed suspect attempted to rush the stage, resulting in a brief security confrontation where a Secret Service agent sustained non-life-threatening injuries."
-        },
-        {
-            "time": "15:19",
-            "text": "President Trump was safely evacuated from the annual White House Correspondents Association dinner on Saturday night after an armed suspect attempted to rush the stage, resulting in a brief security confrontation where a Secret Service agent sustained non-life-threatening injuries."
-        },
-        {
-            "time": "14:36",
-            "text": "NEW_TOPIC: Security Incident at White House Correspondents Dinner - President Trump was safely evacuated from the annual White House Correspondents Association dinner on Saturday night after an armed suspect attempted to rush the stage, resulting in a brief security confrontation where a Secret Service agent sustained non-life-threatening injuries."
+            "time": "21:47",
+            "text": "President Trump was safely evacuated from the White House Correspondents Association dinner on Saturday night following an armed security incident where a suspect was taken into custody after a brief confrontation."
         }
     ],
-    "page8_topic": "Security Incident at White House Correspondents Dinner - President Trump was safely evacuated from the annual White House Correspondents Association dinner on Saturday night after an armed suspect attempted to rush the stage, resulting in a brief security confrontation where a Secret Service agent sustained non-life-threatening injuries.",
+    "page8_topic": "The 2026 'Super Saturday' of record-shattering T20 cricket scores and successful chases marks a historic shift in the sport, raising fundamental questions about the future of bowling in the format.",
     "sections": {
         "MARKETS": [
-            "Sensex and Nifty facing downward pressure due to geopolitical instability in the Middle East and rising oil prices.",
-            "Indian IT stocks underperforming, significantly impacted by lukewarm Q4 results and weak global demand.",
-            "US equity markets volatile, influenced by tech-led earnings reports and ongoing inflationary concerns.",
-            "Market capitalisation of BSE-listed firms saw significant erosion of nearly Rs 6 lakh crore amid recent sell-offs.",
-            "Global investor sentiment dampened by the ongoing standoff in the Strait of Hormuz.",
-            "Broad-based market rally seen early April following initial hopes of US-Iran de-escalation, later reversed.",
-            "Nvidia continues to show volatility, trading in a lower band amid persistent overhang from AI export control announcements.",
-            "Rising US Treasury yields are contributing to negative sentiment on Dalal Street.",
-            "Investors are closely watching Q4 earnings for signs of resilience against macroeconomic headwinds.",
-            "Disappointing results from major IT players like Infosys have accelerated sectoral selling pressure."
+            "NVIDIA reaches unprecedented $5 trillion market valuation, driven by intense AI infrastructure demand.",
+            "Indian stock markets (Sensex, Nifty) experience heightened volatility due to rising crude oil prices and foreign institutional investor (FII) outflows.",
+            "Global markets react cautiously to the ongoing Middle East conflict and its impact on energy transit through the Strait of Hormuz.",
+            "IT sector in India faces significant drag following weak Q4 results and underwhelming guidance from major players like HCL Tech.",
+            "Investors closely track the upcoming US Federal Reserve policy decisions for cues on inflation and interest rate trajectories.",
+            "AMD market capitalization surpasses $500 billion for the first time, signaling competition in the AI chip sector.",
+            "Foreign investors have net-sold approximately \u20b956,363 crore in Indian equities during April 2026.",
+            "Crude oil prices remain elevated, fluctuating due to uncertainty surrounding supply lines and geopolitical tensions.",
+            "Renewed optimism in the semiconductor sector boosts broader market sentiment despite regulatory concerns.",
+            "The Mag Seven earnings calendar is highlighted as a critical driver for global market sentiment in the coming week."
         ],
         "TRADE_TECH": [
-            "US administration announces new strategy to counter 'AI distillation' by China to protect frontier model weights.",
-            "Nvidia and Google Cloud expand collaboration to advance agentic and physical AI applications.",
-            "SEC introduces proposed rules requiring public companies to disclose material risks related to AI usage.",
-            "Microsoft and OpenAI continue to scale enterprise integration of copilots, focusing on data governance.",
-            "Open-source AI models and semiconductor firms face a widening regulatory perimeter regarding model weights.",
-            "Competition intensifies as Alphabet/Google positions Gemini as a direct rival to OpenAI's latest offerings.",
-            "Tech firms face potential compliance cost spikes due to preemptive weight restrictions or geographic licensing.",
-            "Research teams are leveraging Nvidia GPU-accelerated systems to process cosmic data at unprecedented speeds.",
-            "AI chip demand remains robust, with firms investing heavily in domain-specific expertise beyond commercial use cases.",
-            "Tech industry monitoring new US export controls that expand beyond hardware to the AI software stack."
+            "NVIDIA hits $5 trillion valuation, solidifying its position as the world's most valuable company amid AI boom.",
+            "Draft US rules propose stringent export controls requiring Commerce Department approval for global AI chip shipments.",
+            "Pentagon classifies Anthropic as a 'supply chain risk,' marking a rare designation for a domestic AI tech company.",
+            "Google's in-house TPU processors ('Ironwood') emerge as a potential long-term competitor to NVIDIA's dominance.",
+            "Environmental scrutiny of Big Tech intensifies, with protests targeting Nvidia's data center environmental impact.",
+            "Stellantis signs a major AI partnership deal with Microsoft to accelerate automotive tech integration.",
+            "Concerns over 'agentic' AI applications drive massive capital expenditure plans by hyperscalers.",
+            "Global data center buildouts face potential delays due to bureaucratic bottlenecks and proposed export restrictions.",
+            "AI-linked crypto tokens experience volatility in response to US regulatory news and chip export policy shifts.",
+            "Industry debate continues over the environmental cost of AI, specifically regarding Scope 3 emissions in the chip supply chain."
         ],
         "WORLD": [
-            "Conflict in the Middle East persists, with the Strait of Hormuz remaining a critical and constrained bottleneck.",
-            "US-led naval blockade in the Strait of Hormuz continues, with Iran deploying fast-attack vessels in response.",
-            "Energy prices remain volatile as shipping traffic is severely disrupted by ongoing regional war.",
-            "President Trump evacuated from WHCA dinner after a security incident involving an armed suspect.",
-            "Hungary's landmark April elections mark the end of Viktor Orban's 16-year rule.",
-            "US-Iran tensions continue to dominate, with hopes for diplomatic breakthroughs repeatedly fading.",
-            "Global supply chains remain vulnerable to geopolitical escalations and energy transit security threats.",
-            "European governments scramble to introduce relief measures as energy prices climb toward 2022 highs.",
-            "The US electoral landscape is closely watched as geopolitical instability creates economic spillover risks.",
-            "International observers express concern over the potential for prolonged conflict to reconfigure regional trade and energy transit."
+            "President Trump evacuated during a security incident at the White House Correspondents Association dinner; suspect in custody.",
+            "Fragile US-Iran ceasefire agreement holds, but tension remains high over control of the Strait of Hormuz.",
+            "Israel continues military operations in Lebanon despite the broader US-backed ceasefire deal.",
+            "Hungarian election sees a defeat for the incumbent party amid record voter turnout.",
+            "Conflict in the Middle East continues to cause spikes in crude oil prices, impacting global energy security.",
+            "US officials discuss diplomatic de-escalation strategies regarding Iran while maintaining a firm stance on SoH transit.",
+            "Russian and Ukrainian forces exchange 350 prisoners of war as an Easter truce tentatively holds.",
+            "International Energy Agency continues to manage the release of emergency reserves to combat energy supply shocks.",
+            "Global supply chains remain vulnerable to geopolitical confrontations, particularly those affecting energy transit routes.",
+            "US election-year political rhetoric intensifies, with President Trump's foreign policy stances shaping international relations."
         ],
         "INDIA": [
-            "Union Budget 2026-27 prioritizes record infrastructure spending of 12.2 trillion rupees to bolster growth.",
-            "Jan Vishwas (Amendment of Provisions) Bill 2.0 aims to decriminalize 784 provisions to improve Ease of Doing Business.",
-            "Government focuses on 'Make in India' through targeted PLI schemes for electronics, textiles, and biopharmaceuticals.",
-            "New high-speed rail corridors and inland waterways announced to improve logistics and manufacturing competitiveness.",
-            "Infrastructure Risk Guarantee Fund proposed to provide partial credit support to private developers.",
-            "City Economic Regions (CERs) concept introduced to align infrastructure and job creation in growing metropolitan areas.",
-            "Cabinet clears UDAN 2.0 with a massive outlay to expand regional air connectivity via 100 new airports.",
-            "Focus on indigenous manufacturing of seaplanes and specialized infrastructure for rare earth mining and processing.",
-            "RBI retains inflation target at 4% while monitoring the impact of rising oil prices on the economy.",
-            "Government accelerates recycling of real estate assets of CPSCs to fund large-scale public infrastructure."
+            "Government allocates record \u20b912.2 trillion for infrastructure spending in the 2026-27 Union Budget.",
+            "India's cumulative installed wind power capacity crosses the 56 GW milestone.",
+            "Finance Ministry announces an 'Infrastructure Risk Guarantee Fund' to provide partial credit guarantees for large projects.",
+            "Mumbai intensifies its largest-ever infrastructure push, involving new metro lines, expressways, and airport developments.",
+            "RBI maintains interest rates, highlighting upside risks to inflation linked to oil prices and weather patterns.",
+            "National Waterways development is accelerated to improve logistics connectivity in mineral-rich industrial regions.",
+            "India records its highest-ever annual wind energy capacity addition of 6.05 GW in FY 2025-26.",
+            "New incentives are introduced to indigenize the manufacturing of seaplanes and high-value construction machinery.",
+            "Logistics policy focuses on increasing the share of inland waterways and coastal shipping from 6% to 12% by 2047.",
+            "Support for mega textile parks and biosimilars production is expanded to bolster domestic manufacturing capabilities."
         ],
         "MISC": [
-            "IPL 2026 witnesses extraordinary scoring, with a record 986 runs scored in a single day on April 25.",
-            "Chennai Super Kings overseas player Akeal Hosein sustains an injury scare during a match.",
-            "IPL viewership continues to grow, defying potential concerns over move to a pure-subscription model.",
-            "Delhi Capitals vs. Punjab Kings match sets record as part of a high-scoring run-fest weekend.",
-            "South African bowler Lungi Ngidi involved in an on-field injury incident, later confirmed to be recovering.",
-            "RCB suffers setback ahead of match against Delhi Capitals as star batter Phil Salt is ruled out.",
-            "Tournament remains a strong business model, with franchises reportedly profitable in the 18th edition.",
-            "Mukul Choudhary's heroics for Lucknow Super Giants highlighted as a top comeback story this season.",
-            "IPL 2026 records Orange Cap frequently changing hands as competition among top batsmen remains fierce.",
-            "KL Rahul achieves multiple individual milestones, entering the elite top-six all-time IPL run scorers list."
+            "KL Rahul hits a record 152* off 67 balls, the highest IPL score by an Indian player.",
+            "Punjab Kings successfully chase 265, setting a new world record for the highest successful T20 chase.",
+            "Sanju Samson's wicketkeeping skills draw comparisons to MS Dhoni in a recent IPL match.",
+            "Record-breaking run-fest sees 986 runs scored in a single Saturday of IPL action.",
+            "Sai Sudharsan leads Gujarat Titans to victory over Chennai Super Kings with a crucial 87-run knock.",
+            "Vaibhav Suryavanshi recognized as the youngest player to score 1,000 runs in T20 cricket.",
+            "IPL media rights value remains a topic of industry confidence despite consolidation in the media market.",
+            "Virat Kohli becomes the first batter to hit 800 boundaries and the third to hit 300 sixes in IPL history.",
+            "Lungi Ngidi hospitalized following a heavy fall during an IPL match, raising concerns about player welfare.",
+            "India selected as one of 12 countries for a new FIFA Women's Development Programme."
         ],
-        "LIVE_UPDATE": "President Trump was safely evacuated from the White House Correspondents Association dinner on Saturday night after an armed suspect attempted to rush the stage, resulting in a brief security confrontation where a Secret Service agent sustained non-life-threatening injuries.",
-        "NEW_TOPIC": null,
+        "LIVE_UPDATE": "President Trump was safely evacuated from the White House Correspondents Association dinner on Saturday night following an armed security incident where a suspect was taken into custody after a brief confrontation.",
+        "NEW_TOPIC": "The 2026 'Super Saturday' of record-shattering T20 cricket scores and successful chases marks a historic shift in the sport, raising fundamental questions about the future of bowling in the format.",
         "GEMS": [
-            "Central Bank of India: This PSU bank trades at a compelling low P/E ratio, benefiting from the broader recovery in public sector banking stability.",
-            "NMDC Ltd: A key mining player that has been fundamental to domestic growth, currently offering attractive valuation relative to its strong operational efficiency.",
-            "IRB Infrastructure Developers: This firm is uniquely positioned to benefit from the government's record-breaking capital expenditure on national highways and infrastructure.",
-            "SJVN Ltd: As a player in the renewable power space, it stands to gain from the government\u2019s push for green energy and sustainable infrastructure projects.",
-            "Hindustan Zinc: A subsidiary of Vedanta, it is capitalizing on increased industrial demand and has recently rewarded shareholders with a significant dividend, reflecting strong profit growth."
+            "NVDA",
+            "AMD",
+            "HCLTECH",
+            "TATAMOTORS",
+            "TRENT"
         ]
     }
 }
