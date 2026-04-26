@@ -4,6 +4,7 @@ import time
 import datetime
 import urllib.parse
 import re
+import random
 from google import genai
 from google.genai import types
 
@@ -36,19 +37,51 @@ def load_data():
             return default_structure
     return default_structure
 
-def get_gemini_news(prompt):
-    """Safety-wrapped Gemini call using the 3.1 Flash Lite Preview model."""
-    try:
-        response = client.models.generate_content(
-            model="gemini-3.1-flash-lite-preview",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                tools=[types.Tool(google_search=types.GoogleSearch())]
+def get_gemini_news(prompt, max_retries=5):
+    """
+    Fetch with exponential backoff (capped at 5 retries).
+    Falls back to a non-search request as a final attempt.
+    """
+    model_id = "gemini-3.1-flash-lite-preview"
+    
+    for attempt in range(max_retries):
+        try:
+            print(f"Attempt {attempt + 1}/{max_retries}...")
+            response = client.models.generate_content(
+                model=model_id,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    tools=[types.Tool(google_search=types.GoogleSearch())]
+                )
             )
+            return response.text
+            
+        except Exception as e:
+            err_msg = str(e).upper()
+            
+            # If it's a 503 (Server Busy) or 429 (Rate Limit), we wait and retry
+            if "503" in err_msg or "UNAVAILABLE" in err_msg or "429" in err_msg:
+                # Exponential backoff: 2, 4, 8, 16, 32 seconds + jitter
+                wait_time = (2 ** attempt) + random.uniform(0, 1)
+                print(f"Server busy/Throttled. Retrying in {wait_time:.2f}s...")
+                time.sleep(wait_time)
+            else:
+                # If it's a different error (like a 400 Bad Request), stop immediately
+                print(f"Permanent Error encountered: {e}")
+                break
+
+    # --- FINAL FALLBACK ---
+    # If we are here, it means all 5 attempts with Search failed.
+    # We try ONE last time without the search tool to keep the site populated.
+    print("All retries with Search failed. Attempting final non-grounded fallback...")
+    try:
+        fallback_res = client.models.generate_content(
+            model=model_id,
+            contents=prompt + " (Search is unavailable, use internal knowledge to provide latest possible info)"
         )
-        return response.text
-    except Exception as e:
-        print(f"API Error: {e}")
+        return fallback_res.text
+    except Exception as final_e:
+        print(f"Total system failure: {final_e}")
         return None
 
 def clean_text(text):
