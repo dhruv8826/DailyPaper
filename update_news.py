@@ -113,18 +113,16 @@ def generate_pages(data):
         html_body = ""
         
         if slug == "index":
-            # --- GREEDY HEADLINE EXTRACTOR ---
+            # --- INDEX LOGIC: Find lines starting with * ---
             html_body = "<ul>"
-            # Separate news from Gems to prevent Gems appearing on Index
             news_block = all_content.split("[[GEMS]]")[0] if "[[GEMS]]" in all_content else all_content
             lines = [l.strip() for l in news_block.split('\n') if l.strip()]
             headlines = []
             for line in lines:
-                # Strips away numbers like '1.', bullets like '*', or 'Headline:'
-                clean_h = re.sub(r'^[\d\.\-\*\s]+|Headline:\s*', '', line, flags=re.IGNORECASE).strip()
-                # Accept anything between 20 and 200 chars that isn't a TAG
-                if 20 < len(clean_h) < 200 and "[[" not in clean_h:
-                    headlines.append(clean_h)
+                if line.startswith('*'):
+                    clean_h = line.lstrip('*').strip()
+                    if 25 < len(clean_h) < 250:
+                        headlines.append(clean_h)
             
             for h in list(dict.fromkeys(headlines))[:15]:
                 html_body += f"<li>{h}</li>"
@@ -136,21 +134,19 @@ def generate_pages(data):
                 html_body += f"<div class='update'><strong>{item['time']}</strong>: {item['text']}</div><hr>"
 
         else:
-            # --- SMART BLOCK SPLITTER ---
+            # --- SECTION LOGIC: Split by Asterisk (*) ---
             tag = tag_map.get(slug)
             content = extract_section(all_content, tag)
             
-            # Split by double newlines or by lines that start with numbers/bullets
-            blocks = re.split(r'\n\n|\n(?=\d+\.|\*|Headline:)', content)
+            # Split by asterisk to catch every bullet point as a new block
+            blocks = content.split('*')
             
             for b in blocks:
                 clean_b = b.strip()
                 if len(clean_b) > 40:
-                    # Generate search link
                     search_query = urllib.parse.quote(clean_b[:60])
                     search_url = f"https://www.google.com/search?q={search_query}"
                     
-                    # Wrap in a paragraph and a styled div
                     html_body += f"""
                     <div class='news-block'>
                         <p>{clean_b}</p>
