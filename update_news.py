@@ -173,6 +173,18 @@ def generate_pages(data):
             for item in data.get("page8_timeline", []):
                 html_body += f"<div class='update'><strong>{item['time']}</strong>: {item['text']}</div><hr>"
 
+        elif slug == "gems":
+            # Page 4: Try to find gems in the mega-block
+            content = extract_section(all_content, "GEMS")
+            if not content:
+                # Fallback to the old dedicated gems key if all_news is missing it
+                content = data["sections"].get("gems", "")
+            
+            if not content or "Researching" in content:
+                html_body = "Researching new gems... check back in 24h."
+            else:
+                html_body = content
+
         else:
             # PULL EVERYTHING FROM THE ALL_NEWS BLOCK
             tag = tag_map.get(slug)
