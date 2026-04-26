@@ -95,7 +95,7 @@ def should_upd(current_data, key, hrs):
     except: return True
 
 def generate_pages(data):
-    """Generates 8 static HTML files with consistent layout."""
+    """Generates 8 static HTML files with robust formatting."""
     pages = {
         "index": "Front Page", "markets": "Share Market", "business": "Trade & Tech",
         "gems": "Undervalued Gems", "world": "World News", "india": "Indian News",
@@ -113,15 +113,19 @@ def generate_pages(data):
         html_body = ""
         
         if slug == "index":
+            # --- GREEDY HEADLINE EXTRACTOR ---
             html_body = "<ul>"
-            # Isolate news from Gems to prevent Gems appearing on Index
+            # Separate news from Gems to prevent Gems appearing on Index
             news_block = all_content.split("[[GEMS]]")[0] if "[[GEMS]]" in all_content else all_content
             lines = [l.strip() for l in news_block.split('\n') if l.strip()]
             headlines = []
             for line in lines:
+                # Strips away numbers like '1.', bullets like '*', or 'Headline:'
                 clean_h = re.sub(r'^[\d\.\-\*\s]+|Headline:\s*', '', line, flags=re.IGNORECASE).strip()
-                if 25 < len(clean_h) < 200 and "[[" not in clean_h:
+                # Accept anything between 20 and 200 chars that isn't a TAG
+                if 20 < len(clean_h) < 200 and "[[" not in clean_h:
                     headlines.append(clean_h)
+            
             for h in list(dict.fromkeys(headlines))[:15]:
                 html_body += f"<li>{h}</li>"
             html_body += "</ul>"
@@ -131,22 +135,27 @@ def generate_pages(data):
             for item in data.get("page8_timeline", []):
                 html_body += f"<div class='update'><strong>{item['time']}</strong>: {item['text']}</div><hr>"
 
-        elif slug == "gems":
-            content = extract_section(all_content, "GEMS") or data["sections"].get("gems", "")
-            if not content or "Researching" in content:
-                html_body = "<p>Researching new gems... check back in 24h.</p>"
-            else:
-                html_body = "<ul>" + "".join([f"<li>{l.strip()}</li>" for l in content.split('\n') if len(l.strip()) > 10]) + "</ul>"
-
         else:
+            # --- SMART BLOCK SPLITTER ---
             tag = tag_map.get(slug)
             content = extract_section(all_content, tag)
+            
+            # Split by double newlines or by lines that start with numbers/bullets
             blocks = re.split(r'\n\n|\n(?=\d+\.|\*|Headline:)', content)
+            
             for b in blocks:
                 clean_b = b.strip()
                 if len(clean_b) > 40:
-                    search_url = f"https://www.google.com/search?q={urllib.parse.quote(clean_b[:60])}"
-                    html_body += f"<div class='news-block'><p>{clean_b}</p><a href='{search_url}' target='_blank'>Verify ↗</a></div><hr>"
+                    # Generate search link
+                    search_query = urllib.parse.quote(clean_b[:60])
+                    search_url = f"https://www.google.com/search?q={search_query}"
+                    
+                    # Wrap in a paragraph and a styled div
+                    html_body += f"""
+                    <div class='news-block'>
+                        <p>{clean_b}</p>
+                        <a href='{search_url}' target='_blank' style='font-size:0.8em;'>Verify ↗</a>
+                    </div><hr>"""
 
         full_html = f"""<!DOCTYPE html><html><head><link rel="stylesheet" href="style.css">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
