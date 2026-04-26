@@ -170,6 +170,7 @@ def main():
         if news_json:
             # We call gems_json info only when news_json was successful
             if include_gems_instruction != "":
+                print("Running gems_prompt...")
                 gems_json = get_gemini_news(include_gems_instruction)
                 if ems_json and "GEMS" in gems_json:
                     news_json["GEMS"] = gems_json["GEMS"]
