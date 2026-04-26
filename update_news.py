@@ -140,11 +140,27 @@ def generate_pages(data):
         all_content = data["sections"].get("all_news", "")
 
         if slug == "index":
-            # Page 1: Headlines only
+            # Page 1: Robust Headline Extraction
             html_body = "<ul>"
-            lines = [l.strip() for l in all_content.split('\n') if l.strip() and l[0].isdigit()]
-            for h in lines[:15]:
-                html_body += f"<li>{clean_text(h)}</li>"
+            all_content = data["sections"].get("all_news", "")
+            
+            # 1. Split into lines and remove empty ones
+            lines = [l.strip() for l in all_content.split('\n') if l.strip()]
+            
+            # 2. Look for lines that look like headlines (short, start with bullet/number)
+            found_headlines = []
+            for line in lines:
+                # Clean prefix: remove things like '1.', '-', '*', or 'Headline:'
+                clean_h = re.sub(r'^[\d\.\-\*\s]+|Headline:\s*', '', line, flags=re.IGNORECASE).strip()
+                
+                # If the line is short enough to be a headline and not a full paragraph
+                if 10 < len(clean_h) < 150 and not any(tag in line for tag in ["[[", "]]"]):
+                    found_headlines.append(clean_h)
+            
+            # 3. Take the first 15 unique headlines
+            for h in list(dict.fromkeys(found_headlines))[:15]:
+                html_body += f"<li>{h}</li>"
+            
             html_body += "</ul>"
 
         elif slug == "live":
