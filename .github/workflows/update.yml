@@ -26,6 +26,7 @@ jobs:
       - name: Run Logic
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PYTHONUNBUFFERED: "1"
         run: python update_news.py
       - name: Commit & Push Changes
         run: |
