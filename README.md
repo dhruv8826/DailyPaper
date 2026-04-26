@@ -23,6 +23,13 @@ The project runs entirely on a **$0 budget** by leveraging GitHub Actions for co
 - **Stateful Memory:** Uses a `data.json` file as a "database" to persist timelines and track update intervals across stateless GitHub Action runs.
 - **Automated Grounding:** Every story includes a dynamically generated "Search on Google" link for instant verification.
 
+## 🛠️ Stateful Agent Architecture
+Unlike a simple scraper, this project operates as a **Stateful AI Agent** that manages its own persistence layer:
+- **Database (`data.json`):** Acts as a local NoSQL state store, preserving the context of past updates and investment research.
+- **Intelligent Sync Logic:** - **Global Sync:** Triggers every 1 hour for general news and tracker updates.
+  - **Gems Research:** A deep-dive 24-hour cycle specifically for qualitative stock analysis.
+- **Structured JSON Output:** Forced schema enforcement via the Gemini API to ensure 100% reliable data parsing and UI consistency.
+
 ## 🛠 Tech Stack
 - **Language:** Python 3.10+
 - **LLM:** Google Gemini 3.1 Flash Lite (via `google-genai` SDK)
@@ -72,6 +79,11 @@ The project runs entirely on a **$0 budget** by leveraging GitHub Actions for co
 - **Model Choice:** This project utilizes **Gemini 3.1 Flash Lite**, which offers a generous **500 Requests Per Day** on the Free Tier, making hourly updates reliable and sustainable.
 - **Rate Limiting:** The script implements a cooldown sequence to respect **RPM (Requests Per Minute)** limits while maintaining high availability.
 - **State Persistence:** By committing `data.json` back to the repository, the application maintains a "memory" of previous events, allowing for complex features like the **Live Tracker** timeline.
+
+## ✅ Trust & Verification
+To combat AI hallucinations and ensure data integrity, every news item and stock gem includes:
+- **Dynamic Search Links:** Automated "Verify on Google ↗" deep-links generated for every single story.
+- **Grounding:** All summaries are grounded in real-time Google Search results before being processed into the state store.
 
 ---
 *Developed by dhruv8826*
