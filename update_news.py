@@ -18,17 +18,14 @@ def load_data():
         "page8_timeline": [],
         "page8_topic": "Global Geopolitics",
         "sections": {
-            "finance_tech": "", 
-            "general_news": "", 
-            "gems": "",
-            "all_news": ""
+            "all_news": "",
+            "gems": ""
         }
     }
     if os.path.exists('data.json'):
         try:
             with open('data.json', 'r') as f:
                 data = json.load(f)
-                # Ensure all keys exist to prevent KeyErrors
                 for key, val in default_structure.items():
                     if key not in data: 
                         data[key] = val
@@ -38,12 +35,8 @@ def load_data():
     return default_structure
 
 def get_gemini_news(prompt, max_retries=5):
-    """
-    Fetch with exponential backoff (capped at 5 retries).
-    Falls back to a non-search request as a final attempt.
-    """
+    """Fetch with exponential backoff and non-grounded fallback."""
     model_id = "gemini-3.1-flash-lite-preview"
-    
     for attempt in range(max_retries):
         try:
             print(f"Attempt {attempt + 1}/{max_retries}...")
@@ -55,68 +48,45 @@ def get_gemini_news(prompt, max_retries=5):
                 )
             )
             return response.text
-            
         except Exception as e:
             err_msg = str(e).upper()
-            
-            # If it's a 503 (Server Busy) or 429 (Rate Limit), we wait and retry
             if "503" in err_msg or "UNAVAILABLE" in err_msg or "429" in err_msg:
-                # Exponential backoff: 2, 4, 8, 16, 32 seconds + jitter
                 wait_time = (2 ** attempt) + random.uniform(0, 1)
-                print(f"Server busy/Throttled. Retrying in {wait_time:.2f}s...")
+                print(f"Retrying in {wait_time:.2f}s...")
                 time.sleep(wait_time)
             else:
-                # If it's a different error (like a 400 Bad Request), stop immediately
-                print(f"Permanent Error encountered: {e}")
+                print(f"Permanent Error: {e}")
                 break
 
-    # --- FINAL FALLBACK ---
-    # If we are here, it means all 5 attempts with Search failed.
-    # We try ONE last time without the search tool to keep the site populated.
-    print("All retries with Search failed. Attempting final non-grounded fallback...")
+    print("Attempting final non-grounded fallback...")
     try:
-        fallback_res = client.models.generate_content(
+        fallback = client.models.generate_content(
             model=model_id,
-            contents=prompt + " (Search is unavailable, use internal knowledge to provide latest possible info)"
+            contents=prompt + " (Search unavailable, use internal knowledge)"
         )
-        return fallback_res.text
-    except Exception as final_e:
-        print(f"Total system failure: {final_e}")
+        return fallback.text
+    except:
         return None
 
 def clean_text(text):
-    """Strips Markdown artifacts and system prompts from the text."""
+    """Strips Markdown artifacts."""
     if not text: return ""
-    # Remove bold markers and headers
     text = re.sub(r'[*#]', '', text)
-    # Remove potential AI block markers
-    text = text.replace("```html", "").replace("```", "")
-    return text.strip()
+    return text.replace("```html", "").replace("```", "").strip()
 
 def extract_section(full_text, tag):
-    """Uses Regex to find tags even if the AI adds bolding, spaces, or cases."""
+    """Regex extraction to handle bolding or spacing in AI tags."""
     if not full_text: return ""
-    
-    # Matches [[TAG]], **[[TAG]]**, [[ TAG ]], etc. (Case Insensitive)
     pattern = rf"(?:\*\*|)\s*\[\[\s*{tag}\s*\]\]\s*(?:\*\*|)"
     match = re.search(pattern, full_text, re.IGNORECASE)
-    
-    if not match:
-        return ""
-    
+    if not match: return ""
     start_idx = match.end()
-    # Find where the next [[ tag starts
     next_tag = full_text.find("[[", start_idx)
-    
-    if next_tag == -1:
-        content = full_text[start_idx:]
-    else:
-        content = full_text[start_idx:next_tag]
-        
+    content = full_text[start_idx:] if next_tag == -1 else full_text[start_idx:next_tag]
     return clean_text(content)
 
 def should_upd(current_data, key, hrs):
-    """Checks timestamp in data to see if update is needed."""
+    """Timestamp checker."""
     last = current_data.get("last_updated", {}).get(key)
     if not last: return True
     try:
@@ -125,88 +95,65 @@ def should_upd(current_data, key, hrs):
     except: return True
 
 def generate_pages(data):
+    """Generates 8 static HTML files with consistent layout."""
     pages = {
         "index": "Front Page", "markets": "Share Market", "business": "Trade & Tech",
         "gems": "Undervalued Gems", "world": "World News", "india": "Indian News",
         "misc": "Miscellaneous", "live": "Live Tracker"
     }
-    
-    # Map the URL slug to the [[TAG]] used in the Mega-Prompt
     tag_map = {
-        "markets": "MARKETS", "business": "TRADE_TECH",
-        "world": "WORLD", "india": "INDIA", "misc": "MISC", "gems": "GEMS"
+        "markets": "MARKETS", "business": "TRADE_TECH", "world": "WORLD", 
+        "india": "INDIA", "misc": "MISC", "gems": "GEMS"
     }
 
     nav = "<nav>" + " | ".join([f'<a href="{s}.html">{t}</a>' for s, t in pages.items()]) + "</nav>"
-    
     all_content = data["sections"].get("all_news", "")
 
     for slug, title in pages.items():
         html_body = ""
         
         if slug == "index":
-            # --- Robust Headline Extraction ---
             html_body = "<ul>"
-            all_content = data["sections"].get("all_news", "")
-            
-            # 1. Clean the text and split into lines
-            # We filter out tags, empty lines, and the Gem disclaimers
-            lines = [l.strip() for l in all_content.split('\n') if l.strip()]
-            
+            # Isolate news from Gems to prevent Gems appearing on Index
+            news_block = all_content.split("[[GEMS]]")[0] if "[[GEMS]]" in all_content else all_content
+            lines = [l.strip() for l in news_block.split('\n') if l.strip()]
             headlines = []
             for line in lines:
-                # Remove prefixes like '1.', '-', '*', or 'Headline:'
-                clean_line = re.sub(r'^[\d\.\-\*\s]+|Headline:\s*', '', line, flags=re.IGNORECASE).strip()
-                
-                # HEADLINE RULES: 
-                # - Must be at least 30 characters long
-                # - Must NOT be a Tag line (e.g., [[MARKETS]])
-                # - Must NOT be longer than 160 characters (to avoid full paragraphs)
-                if 30 < len(clean_line) < 160 and "[[" not in line:
-                    headlines.append(clean_line)
-            
-            # 2. Pick the first 15 unique headlines found across all sections
-            unique_headlines = list(dict.fromkeys(headlines))
-            for h in unique_headlines[:15]:
+                clean_h = re.sub(r'^[\d\.\-\*\s]+|Headline:\s*', '', line, flags=re.IGNORECASE).strip()
+                if 25 < len(clean_h) < 200 and "[[" not in clean_h:
+                    headlines.append(clean_h)
+            for h in list(dict.fromkeys(headlines))[:15]:
                 html_body += f"<li>{h}</li>"
-            
             html_body += "</ul>"
 
         elif slug == "live":
-            html_body = f"<h2>Current Topic: {data.get('page8_topic')}</h2>"
+            html_body = f"<h2>Topic: {data.get('page8_topic')}</h2>"
             for item in data.get("page8_timeline", []):
                 html_body += f"<div class='update'><strong>{item['time']}</strong>: {item['text']}</div><hr>"
 
         elif slug == "gems":
-            # Page 4: Try to find gems in the mega-block
-            content = extract_section(all_content, "GEMS")
-            if not content:
-                # Fallback to the old dedicated gems key if all_news is missing it
-                content = data["sections"].get("gems", "")
-            
+            content = extract_section(all_content, "GEMS") or data["sections"].get("gems", "")
             if not content or "Researching" in content:
-                html_body = "Researching new gems... check back in 24h."
+                html_body = "<p>Researching new gems... check back in 24h.</p>"
             else:
-                html_body = content
+                html_body = "<ul>" + "".join([f"<li>{l.strip()}</li>" for l in content.split('\n') if len(l.strip()) > 10]) + "</ul>"
 
         else:
-            # PULL EVERYTHING FROM THE ALL_NEWS BLOCK
             tag = tag_map.get(slug)
             content = extract_section(all_content, tag)
-            
-            # Convert newlines to <br> so paragraphs actually show up
-            formatted_content = content.replace('\n', '<br>')
+            blocks = re.split(r'\n\n|\n(?=\d+\.|\*|Headline:)', content)
+            for b in blocks:
+                clean_b = b.strip()
+                if len(clean_b) > 40:
+                    search_url = f"https://www.google.com/search?q={urllib.parse.quote(clean_b[:60])}"
+                    html_body += f"<div class='news-block'><p>{clean_b}</p><a href='{search_url}' target='_blank'>Verify ↗</a></div><hr>"
 
-            # Wrap each line that looks like a story in a styled div
-            html_body = ""
-            for line in content.split('\n'):
-                if len(line.strip()) > 30:
-                    search_url = f"https://www.google.com/search?q={urllib.parse.quote(line[:100])}"
-                    html_body += f"<div class='news-block'>{line}<br><a href='{search_url}' target='_blank'>Verify ↗</a></div><hr>"
-
-        full_html = f"""<!DOCTYPE html><html><head><link rel="stylesheet" href="style.css"></head><body>
-            <div class="paper"><header><h1>THE HOURLY JOURNAL</h1>{nav}</header><hr>
-            <main><h2>{title}</h2>{html_body}</main></div></body></html>"""
+        full_html = f"""<!DOCTYPE html><html><head><link rel="stylesheet" href="style.css">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head><body><div class="paper"><header><h1>THE HOURLY JOURNAL</h1>{nav}</header><hr>
+            <main><h2>{title}</h2>{html_body}</main>
+            <footer>Updated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}</footer>
+            </div></body></html>"""
         
         with open(f"{slug}.html", "w", encoding="utf-8") as f:
             f.write(full_html)
@@ -214,45 +161,25 @@ def generate_pages(data):
 def main():
     data = load_data()
     now = datetime.datetime.now()
-    updated = False
 
-    # 1. TRIGGER MEGA PROMPT (Hourly)
     if should_upd(data, "global_sync", 1):
-        print("Fetching Mega-Update from Gemini...")
-        
-        # Trigger gems if 24h passed OR if the gems section is currently blank/placeholder
+        print("Starting Global Sync...")
         has_no_gems = not data["sections"].get("gems") or "Researching" in data["sections"].get("gems")
-        include_gems = "Also include [[GEMS]] section with 5 undervalued Indian stocks (P/E focus)." if (should_upd(data, "daily_gems", 24) or has_no_gems) else ""
+        include_gems = "Also include [[GEMS]] section with 5 undervalued Indian stocks." if (should_upd(data, "daily_gems", 24) or has_no_gems) else ""
         
-        mega_prompt = f"""
-        Search and provide news for these sections. Wrap in [[TAGS]]:
-        [[MARKETS]] - Top 10 Indian & World Market news.
-        [[TRADE_TECH]] - Top 10 Business & Tech news.
-        [[WORLD]] - Top 10 World news.
-        [[INDIA]] - Top 10 Indian news.
-        [[MISC]] - Top 10 Sports/Ent.
-        [[LIVE]] - 1-sentence update on {data['page8_topic']}. 
-        (If a bigger story exists, start with 'NEW_TOPIC: [Name]').
+        prompt = f"""Search and provide news for these sections. Wrap in [[TAGS]]:
+        [[MARKETS]], [[TRADE_TECH]], [[WORLD]], [[INDIA]], [[MISC]], [[LIVE]] (1-sentence on {data['page8_topic']}).
         {include_gems}
-        Rules: 1-para summaries, no markdown (** or #), clean text only.
-        For [[GEMS]], provide only the list of 5 stocks and 1-sentence logic. Do NOT include financial advice disclaimers or introductory fluff.
-
-        CRITICAL FORMATTING RULES:
-        - DO NOT use any Markdown symbols like **, #, or ###.
-        - Start every section with the tag on its own line: [[TAGNAME]].
-        - Use plain text only.
-        - Every news item must be on a new line.
+        Rules: No markdown (**), plain text, tags on new lines, 1-para summaries.
         """
 
-        res = get_gemini_news(mega_prompt)
-        
+        res = get_gemini_news(prompt)
         if res:
             data["sections"]["all_news"] = res
             if "[[GEMS]]" in res:
                 data["sections"]["gems"] = extract_section(res, "GEMS")
                 data["last_updated"]["daily_gems"] = now.isoformat()
             
-            # Live Tracker Logic
             live_update = extract_section(res, "LIVE")
             if "NEW_TOPIC:" in live_update:
                 data["page8_topic"] = live_update.split("NEW_TOPIC:")[1].split('\n')[0].strip()
@@ -262,12 +189,9 @@ def main():
             
             data["page8_timeline"] = data["page8_timeline"][:24]
             data["last_updated"]["global_sync"] = now.isoformat()
-            updated = True
-            
             with open('data.json', 'w') as f:
                 json.dump(data, f, indent=4)
     
-    # 2. ALWAYS regenerate pages from either fresh or cached data
     generate_pages(data)
 
 if __name__ == "__main__":
