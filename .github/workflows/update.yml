@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      TZ: Asia/Kolkata  # This sets the server's local time to IST
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
