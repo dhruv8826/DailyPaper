@@ -141,8 +141,32 @@ def generate_pages(data):
         html_body = ""
         
         if slug == "index":
-            # (Insert the "Robust Headline" logic from the previous reply here)
-            pass 
+            # --- Robust Headline Extraction ---
+            html_body = "<ul>"
+            all_content = data["sections"].get("all_news", "")
+            
+            # 1. Clean the text and split into lines
+            # We filter out tags, empty lines, and the Gem disclaimers
+            lines = [l.strip() for l in all_content.split('\n') if l.strip()]
+            
+            headlines = []
+            for line in lines:
+                # Remove prefixes like '1.', '-', '*', or 'Headline:'
+                clean_line = re.sub(r'^[\d\.\-\*\s]+|Headline:\s*', '', line, flags=re.IGNORECASE).strip()
+                
+                # HEADLINE RULES: 
+                # - Must be at least 30 characters long
+                # - Must NOT be a Tag line (e.g., [[MARKETS]])
+                # - Must NOT be longer than 160 characters (to avoid full paragraphs)
+                if 30 < len(clean_line) < 160 and "[[" not in line:
+                    headlines.append(clean_line)
+            
+            # 2. Pick the first 15 unique headlines found across all sections
+            unique_headlines = list(dict.fromkeys(headlines))
+            for h in unique_headlines[:15]:
+                html_body += f"<li>{h}</li>"
+            
+            html_body += "</ul>"
 
         elif slug == "live":
             html_body = f"<h2>Current Topic: {data.get('page8_topic')}</h2>"
