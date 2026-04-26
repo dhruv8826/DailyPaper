@@ -204,8 +204,10 @@ def main():
     if should_upd(data, "global_sync", 1):
         print("Fetching Mega-Update from Gemini...")
         
-        include_gems = "Also include [[GEMS]] section with 5 undervalued Indian stocks (P/E focus)." if should_upd(data, "daily_gems", 24) else ""
-
+        # Trigger gems if 24h passed OR if the gems section is currently blank/placeholder
+        has_no_gems = not data["sections"].get("gems") or "Researching" in data["sections"].get("gems")
+        include_gems = "Also include [[GEMS]] section with 5 undervalued Indian stocks (P/E focus)." if (should_upd(data, "daily_gems", 24) or has_no_gems) else ""
+        
         mega_prompt = f"""
         Search and provide news for these sections. Wrap in [[TAGS]]:
         [[MARKETS]] - Top 10 Indian & World Market news.
