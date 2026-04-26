@@ -176,10 +176,25 @@ def main():
         has_no_gems = not data["sections"].get("gems") or "Researching" in data["sections"].get("gems")
         include_gems = "Also include [[GEMS]] section with 5 undervalued Indian stocks." if (should_upd(data, "daily_gems", 24) or has_no_gems) else ""
         
-        prompt = f"""Search and provide news for these sections. Wrap in [[TAGS]]:
+        prompt = f"""
+        Search and provide news for these sections. 
+        Wrap each section in [[TAGS]].
+        
         [[MARKETS]], [[TRADE_TECH]], [[WORLD]], [[INDIA]], [[MISC]], [[LIVE]] (1-sentence on {data['page8_topic']}).
         {include_gems}
-        Rules: No markdown (**), plain text, tags on new lines, 1-para summaries.
+        
+        STRICT FORMATTING RULES:
+        1. Every news story MUST be its own paragraph.
+        2. Use a DOUBLE NEWLINE between every story.
+        3. Start every story with a bullet point (*).
+        4. NO markdown symbols like **bolding** or # headers.
+        5. Use only plain text summaries.
+        
+        Example format:
+        [[INDIA]]
+        * First news story summary goes here.
+        
+        * Second news story summary goes here.
         """
 
         res = get_gemini_news(prompt)
