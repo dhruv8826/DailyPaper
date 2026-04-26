@@ -26,14 +26,13 @@ def load_data():
     return default_structure
 
 def get_gemini_news(prompt):
-    """Safety-wrapped Gemini call with 20s cooldown."""
     try:
         response = client.models.generate_content(
             model="gemini-3.1-flash-lite-preview",
             contents=prompt,
             config=types.GenerateContentConfig(tools=[types.Tool(google_search=types.GoogleSearch())])
         )
-        time.sleep(20) 
+        time.sleep(2) 
         return response.text
     except Exception as e:
         print(f"API Error: {e}")
