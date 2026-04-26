@@ -69,7 +69,7 @@ def generate_pages(data):
             headlines = []
             for k in ["MARKETS", "WORLD", "INDIA", "TRADE_TECH"]:
                 cat_list = sections.get(k, [])
-                if cat_list and isinstance(cat_list, list):
+                if isinstance(cat_list, list) and cat_list:
                     headlines.append(cat_list[0])
             html_body = "<ul>" + "".join([f"<li>{h}</li>" for h in headlines]) + "</ul>"
 
@@ -79,13 +79,29 @@ def generate_pages(data):
                 html_body += f"<div class='update'><strong>{item['time']}</strong>: {item['text']}</div><hr>"
 
         else:
-            items = sections.get(key_map.get(slug), [])
-            if not items:
+            # 1. Get the data for this section
+            raw_data = sections.get(key_map.get(slug), [])
+            
+            # 2. DECISION: Is it already a list or a messy string?
+            if isinstance(raw_data, list):
+                items = raw_data
+            else:
+                # Fallback for old data or string format
+                items = re.split(r'\n\n|\n|\*', str(raw_data))
+            
+            # 3. Clean and Display
+            if not items or (len(items) == 1 and not items[0]):
                 html_body = "<p>Updating research... check back in a moment.</p>"
             else:
                 for item in items:
-                    search_url = f"https://www.google.com/search?q={urllib.parse.quote(item[:80])}"
-                    html_body += f"<div class='news-block'><p>{item}</p><a href='{search_url}' target='_blank'>Verify ↗</a></div><hr>"
+                    clean_item = item.strip().lstrip('*').strip()
+                    if len(clean_item) > 25:
+                        search_url = f"https://www.google.com/search?q={urllib.parse.quote(clean_item[:80])}"
+                        html_body += f"""
+                        <div class='news-block'>
+                            <p>{clean_item}</p>
+                            <a href='{search_url}' target='_blank' style='font-size:0.8em;'>Verify ↗</a>
+                        </div><hr>"""
 
         full_html = f"""<!DOCTYPE html><html><head><link rel="stylesheet" href="style.css">
             <meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
@@ -96,7 +112,6 @@ def generate_pages(data):
         
         with open(f"{slug}.html", "w", encoding="utf-8") as f:
             f.write(full_html)
-
 def main():
     data = load_data()
     now = datetime.datetime.now()
