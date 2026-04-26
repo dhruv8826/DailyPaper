@@ -7,6 +7,7 @@ import re
 import random
 from google import genai
 from google.genai import types
+from zoneinfo import ZoneInfo
 
 # 1. SETUP & CLIENT
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
@@ -76,7 +77,7 @@ def generate_pages(data):
         elif slug == "live":
             html_body = f"<h2>Topic: {data.get('page8_topic')}</h2>"
             for item in data.get('page8_timeline', []):
-                html_body += f"<div class='update'><strong>{item['time']}</strong>: {item['text']}</div><hr>"
+                html_body += f"<div class='update'><strong>{item['time']} IST</strong>: {item['text']}</div><hr>"
 
         else:
             # 1. Get the data for this section
@@ -103,18 +104,23 @@ def generate_pages(data):
                             <a href='{search_url}' target='_blank' style='font-size:0.8em;'>Verify ↗</a>
                         </div><hr>"""
 
+        ist_now = datetime.datetime.now(ZoneInfo("Asia/Kolkata"))
+        footer_time = ist_now.strftime('%Y-%m-%d %H:%M')
+        
         full_html = f"""<!DOCTYPE html><html><head><link rel="stylesheet" href="style.css">
             <meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
             <body><div class="paper"><header><h1>THE HOURLY JOURNAL</h1>{nav}</header><hr>
             <main><h2>{title}</h2>{html_body}</main>
-            <footer>Updated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}</footer>
+            <footer>Updated: {footer_time} IST</footer>
             </div></body></html>"""
         
         with open(f"{slug}.html", "w", encoding="utf-8") as f:
             f.write(full_html)
+
 def main():
     data = load_data()
-    now = datetime.datetime.now()
+    # Forces the script to use IST
+    now = datetime.datetime.now(ZoneInfo("Asia/Kolkata"))
 
     if should_upd(data, "global_sync", 1):
         # DETAILED GEMS LOGIC: Check for 24h update or empty section
