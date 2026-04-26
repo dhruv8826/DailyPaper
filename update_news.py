@@ -129,10 +129,10 @@ def main():
         if (should_upd(data, "daily_gems", 24) or has_no_gems):
             include_gems_instruction = """
             [[GEMS]]: Perform deep qualitative research and find 5 'Undervalued Indian Gems' ONLY. 
-            STRICT RITERIA: Must be listed on NSE/BSE.
-            CRITERIA: Focus on hidden companies or companies that are in news or have something great happening suddenly. 
-            Prioritize low P/E stocks benefiting from the recent policies of the government
-            and 'Make in India' PLI schemes. Provide 1-sentence logic per stock. No disclaimers.
+            STRICT CRITERIA: Must be listed on NSE/BSE.
+            Focus on hidden companies or companies that are in news or have something great happening suddenly. 
+            Prioritize low P/E stocks benefiting from the recent policies of the Indian government
+            like 'Make in India' PLI schemes, etc. Provide 1-sentence logic per stock. No disclaimers.
             Format each as: 'Company Name (TICKER): 1-sentence qualitative investment logic.
             """
 
@@ -157,7 +157,7 @@ def main():
             "MISC": ["story1", "story2", ...],
             "LIVE_UPDATE": "text",
             "NEW_TOPIC": "text or null",
-            "GEMS": ["stock1", "stock2", ...]
+            "GEMS": ["stock1 info", "stock2 info", ...]
         }}
         """
 
