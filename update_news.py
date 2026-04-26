@@ -94,22 +94,26 @@ def clean_text(text):
     return text.strip()
 
 def extract_section(full_text, tag):
-    """Extracts content between [[TAG]] markers using string slicing."""
+    """Uses Regex to find tags even if the AI adds bolding, spaces, or cases."""
     if not full_text: return ""
-    start_marker = f"[[{tag}]]"
-    try:
-        if start_marker not in full_text:
-            return ""
-        start_idx = full_text.find(start_marker) + len(start_marker)
-        end_idx = full_text.find("[[", start_idx)
-        
-        if end_idx == -1:
-            content = full_text[start_idx:]
-        else:
-            content = full_text[start_idx:end_idx]
-        return clean_text(content)
-    except:
+    
+    # Matches [[TAG]], **[[TAG]]**, [[ TAG ]], etc. (Case Insensitive)
+    pattern = rf"(?:\*\*|)\s*\[\[\s*{tag}\s*\]\]\s*(?:\*\*|)"
+    match = re.search(pattern, full_text, re.IGNORECASE)
+    
+    if not match:
         return ""
+    
+    start_idx = match.end()
+    # Find where the next [[ tag starts
+    next_tag = full_text.find("[[", start_idx)
+    
+    if next_tag == -1:
+        content = full_text[start_idx:]
+    else:
+        content = full_text[start_idx:next_tag]
+        
+    return clean_text(content)
 
 def should_upd(current_data, key, hrs):
     """Checks timestamp in data to see if update is needed."""
@@ -190,15 +194,15 @@ def generate_pages(data):
             tag = tag_map.get(slug)
             content = extract_section(all_content, tag)
             
-            # if not content and slug == "gems":
-            #     content = "Researching new gems... check back in 24h."
+            # Convert newlines to <br> so paragraphs actually show up
+            formatted_content = content.replace('\n', '<br>')
 
-            # Format the news blocks with Google Search links
-            blocks = content.split('\n')
-            for b in blocks:
-                if len(b.strip()) > 20:
-                    search_url = f"https://www.google.com/search?q={urllib.parse.quote(b[:100])}"
-                    html_body += f"<div class='news-block'>{b} <br><a href='{search_url}' target='_blank'>Verify on Google ↗</a></div><hr>"
+            # Wrap each line that looks like a story in a styled div
+            html_body = ""
+            for line in content.split('\n'):
+                if len(line.strip()) > 30:
+                    search_url = f"https://www.google.com/search?q={urllib.parse.quote(line[:100])}"
+                    html_body += f"<div class='news-block'>{line}<br><a href='{search_url}' target='_blank'>Verify ↗</a></div><hr>"
 
         full_html = f"""<!DOCTYPE html><html><head><link rel="stylesheet" href="style.css"></head><body>
             <div class="paper"><header><h1>THE HOURLY JOURNAL</h1>{nav}</header><hr>
@@ -232,6 +236,12 @@ def main():
         {include_gems}
         Rules: 1-para summaries, no markdown (** or #), clean text only.
         For [[GEMS]], provide only the list of 5 stocks and 1-sentence logic. Do NOT include financial advice disclaimers or introductory fluff.
+
+        CRITICAL FORMATTING RULES:
+        - DO NOT use any Markdown symbols like **, #, or ###.
+        - Start every section with the tag on its own line: [[TAGNAME]].
+        - Use plain text only.
+        - Every news item must be on a new line.
         """
 
         res = get_gemini_news(mega_prompt)
