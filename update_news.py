@@ -133,6 +133,8 @@ def generate_pages(data):
         "world": "WORLD", "india": "INDIA", "misc": "MISC", "gems": "GEMS"
     }
 
+    nav = "<nav>" + " | ".join([f'<a href="{s}.html">{t}</a>' for s, t in pages.items()]) + "</nav>"
+    
     all_content = data["sections"].get("all_news", "")
 
     for slug, title in pages.items():
