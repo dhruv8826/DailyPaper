@@ -191,6 +191,7 @@ def main():
         (If a bigger story exists, start with 'NEW_TOPIC: [Name]').
         {include_gems}
         Rules: 1-para summaries, no markdown (** or #), clean text only.
+        For [[GEMS]], provide only the list of 5 stocks and 1-sentence logic. Do NOT include financial advice disclaimers or introductory fluff.
         """
 
         res = get_gemini_news(mega_prompt)
