@@ -188,14 +188,17 @@ def main():
     generate_pages(data)
 
 def should_upd(data, key, hrs):
+    """Robust timezone-aware update checker."""
     last = data.get("last_updated", {}).get(key)
     if not last: return True
     try:
-        # Use a timezone-aware 'now' for the comparison
+        # Get current time in UTC
         now = datetime.datetime.now(datetime.timezone.utc)
+        
+        # Parse last_time; fromisoformat() handles the +05:30 automatically
         last_time = datetime.datetime.fromisoformat(last)
         
-        # Ensure last_time is also UTC for a fair comparison
+        # Ensure last_time is compared in UTC for a standard baseline
         if last_time.tzinfo is not None:
             last_time = last_time.astimezone(datetime.timezone.utc)
         else:
@@ -203,7 +206,7 @@ def should_upd(data, key, hrs):
             
         return (now - last_time).total_seconds() >= hrs * 3600
     except Exception as e:
-        print(f"Time check error: {e}")
+        print(f"Time comparison error: {e}")
         return True
 
 if __name__ == "__main__":
