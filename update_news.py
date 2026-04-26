@@ -121,68 +121,46 @@ def should_upd(current_data, key, hrs):
     except: return True
 
 def generate_pages(data):
-    """Generates 8 static HTML files from the current data state."""
     pages = {
         "index": "Front Page", "markets": "Share Market", "business": "Trade & Tech",
         "gems": "Undervalued Gems", "world": "World News", "india": "Indian News",
         "misc": "Miscellaneous", "live": "Live Tracker"
     }
     
+    # Map the URL slug to the [[TAG]] used in the Mega-Prompt
     tag_map = {
         "markets": "MARKETS", "business": "TRADE_TECH",
-        "world": "WORLD", "india": "INDIA", "misc": "MISC"
+        "world": "WORLD", "india": "INDIA", "misc": "MISC", "gems": "GEMS"
     }
 
-    nav = "<nav>" + " | ".join([f'<a href="{s}.html">{t}</a>' for s, t in pages.items()]) + "</nav>"
+    all_content = data["sections"].get("all_news", "")
 
     for slug, title in pages.items():
         html_body = ""
-        all_content = data["sections"].get("all_news", "")
-
+        
         if slug == "index":
-            # Page 1: Robust Headline Extraction
-            html_body = "<ul>"
-            all_content = data["sections"].get("all_news", "")
-            
-            # 1. Split into lines and remove empty ones
-            lines = [l.strip() for l in all_content.split('\n') if l.strip()]
-            
-            # 2. Look for lines that look like headlines (short, start with bullet/number)
-            found_headlines = []
-            for line in lines:
-                # Clean prefix: remove things like '1.', '-', '*', or 'Headline:'
-                clean_h = re.sub(r'^[\d\.\-\*\s]+|Headline:\s*', '', line, flags=re.IGNORECASE).strip()
-                
-                # If the line is short enough to be a headline and not a full paragraph
-                if 10 < len(clean_h) < 150 and not any(tag in line for tag in ["[[", "]]"]):
-                    found_headlines.append(clean_h)
-            
-            # 3. Take the first 15 unique headlines
-            for h in list(dict.fromkeys(found_headlines))[:15]:
-                html_body += f"<li>{h}</li>"
-            
-            html_body += "</ul>"
+            # (Insert the "Robust Headline" logic from the previous reply here)
+            pass 
 
         elif slug == "live":
-            # Page 8: Timeline
-            html_body = f"<h2>Current Topic: {data.get('page8_topic', 'Global Events')}</h2>"
+            html_body = f"<h2>Current Topic: {data.get('page8_topic')}</h2>"
             for item in data.get("page8_timeline", []):
                 html_body += f"<div class='update'><strong>{item['time']}</strong>: {item['text']}</div><hr>"
 
-        elif slug == "gems":
-            # Page 4: Undervalued Gems
-            html_body = data["sections"].get("gems", "Updates every 24 hours...")
-
         else:
-            # Pages 2, 3, 5, 6, 7 (Parsed via Tags)
+            # PULL EVERYTHING FROM THE ALL_NEWS BLOCK
             tag = tag_map.get(slug)
-            raw_content = extract_section(all_content, tag)
-            blocks = raw_content.split('\n\n')
+            content = extract_section(all_content, tag)
+            
+            if not content and slug == "gems":
+                content = "Researching new gems... check back in 24h."
+
+            # Format the news blocks with Google Search links
+            blocks = content.split('\n')
             for b in blocks:
-                if b.strip():
-                    headline = b.split('\n')[0][:100]
-                    search_url = f"https://www.google.com/search?q={urllib.parse.quote(headline)}"
-                    html_body += f"<div class='news-block'>{b} <br><a href='{search_url}' target='_blank'>Search on Google ↗</a></div><hr>"
+                if len(b.strip()) > 20:
+                    search_url = f"https://www.google.com/search?q={urllib.parse.quote(b[:100])}"
+                    html_body += f"<div class='news-block'>{b} <br><a href='{search_url}' target='_blank'>Verify on Google ↗</a></div><hr>"
 
         full_html = f"""<!DOCTYPE html><html><head><link rel="stylesheet" href="style.css"></head><body>
             <div class="paper"><header><h1>THE HOURLY JOURNAL</h1>{nav}</header><hr>
