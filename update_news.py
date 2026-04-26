@@ -131,51 +131,52 @@ def generate_pages(data):
 def main():
     data = load_data()
     now = datetime.datetime.now()
-    updated = False
-
-    def should_upd(key, hrs):
-        last = data["last_updated"].get(key)
-        return not last or (now - datetime.datetime.fromisoformat(last)).total_seconds() >= hrs*3600
-
-    # BATCH 1: Finance & Tech (Pages 2, 3) - Every Hour
-    if should_upd("finance_tech", 1):
-        prompt = "Provide news for [[MARKETS]] and [[TRADE_TECH]]. 10 news each, 1-para summaries. No markdown."
-        data["sections"]["finance_tech"] = get_gemini_news(prompt)
-        data["last_updated"]["finance_tech"] = now.isoformat()
-        updated = True
-
-    # BATCH 2: General News (Pages 5, 6, 7) - Every Hour (Hybrid logic can be added here)
-    if should_upd("general_news", 1):
-        prompt = "Provide news for [[WORLD]], [[INDIA]], and [[MISC]]. 10 news each, 1-para summaries. No markdown."
-        data["sections"]["general_news"] = get_gemini_news(prompt)
-        data["last_updated"]["general_news"] = now.isoformat()
-        updated = True
-
-    # BATCH 3: Undervalued Gems (Page 4) - Every 24 Hours
-    if should_upd("gems", 24):
-        prompt = "List 5 undervalued Indian stocks based on P/E and sector tailwinds. 1-para each. No markdown."
-        data["sections"]["gems"] = get_gemini_news(prompt)
-        data["last_updated"]["gems"] = now.isoformat()
-        updated = True
-
-    # BATCH 4: Live Tracker (Page 8) - Every Hour
-    if should_upd("live", 1):
-        prompt = f"Provide a 1-sentence update on {data['page8_topic']}. If a bigger story exists, start with 'NEW_TOPIC: [Name]'."
-        res = get_gemini_news(prompt)
-        if res:
-            if "NEW_TOPIC:" in res:
-                parts = res.split("NEW_TOPIC:")
-                data["page8_topic"] = parts[1].split('\n')[0].strip()
-                data["page8_timeline"] = [{"time": now.strftime("%H:%M"), "text": clean_text(res)}]
-            else:
-                data["page8_timeline"].insert(0, {"time": now.strftime("%H:%M"), "text": clean_text(res)})
-            data["page8_timeline"] = data["page8_timeline"][:24]
-            data["last_updated"]["live"] = now.isoformat()
-            updated = True
-
-    if updated:
-        with open('data.json', 'w') as f: json.dump(data, f)
+    
+    # Check if at least 1 hour has passed since the LAST successful global update
+    if not should_upd("global_sync", 1):
+        # Even if we don't call the API, we regenerate pages from existing data.json
         generate_pages(data)
+        return
+
+    # THE MEGA PROMPT: Everything in one go to save quota
+    mega_prompt = f"""
+    Search and provide news for the following sections. Wrap each in [[TAGS]]:
+    [[MARKETS]] - Top 10 Indian & World Market news.
+    [[TRADE_TECH]] - Top 10 Business & Tech impact news.
+    [[WORLD]] - Top 10 World news.
+    [[INDIA]] - Top 10 Indian news.
+    [[MISC]] - Top 10 Sports/Entertainment.
+    [[LIVE]] - A 1-sentence update on {data['page8_topic']}. 
+    (If a bigger story exists, start with 'NEW_TOPIC: [Name]').
+    
+    Rules: 1-para summaries, no markdown (** or #), clean text only.
+    """
+    
+    response_text = get_gemini_news(mega_prompt)
+    
+    if response_text:
+        # Update our "database" with the new mega-response
+        data["sections"]["finance_tech"] = response_text 
+        data["sections"]["general_news"] = response_text
+        
+        # Handle the Live Tracker update within the mega-response
+        live_update = extract_section(response_text, "LIVE")
+        if live_update:
+            if "NEW_TOPIC:" in live_update:
+                parts = live_update.split("NEW_TOPIC:")
+                data["page8_topic"] = parts[1].split('\n')[0].strip()
+                data["page8_timeline"] = [{"time": now.strftime("%H:%M"), "text": clean_text(live_update)}]
+            else:
+                data["page8_timeline"].insert(0, {"time": now.strftime("%H:%M"), "text": live_update})
+            data["page8_timeline"] = data["page8_timeline"][:24]
+
+        data["last_updated"]["global_sync"] = now.isoformat()
+        
+        with open('data.json', 'w') as f:
+            json.dump(data, f)
+            
+    # Always generate pages (either with new data or cached data)
+    generate_pages(data)
 
 if __name__ == "__main__":
     main()
