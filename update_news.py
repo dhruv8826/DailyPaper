@@ -190,8 +190,8 @@ def generate_pages(data):
             tag = tag_map.get(slug)
             content = extract_section(all_content, tag)
             
-            if not content and slug == "gems":
-                content = "Researching new gems... check back in 24h."
+            # if not content and slug == "gems":
+            #     content = "Researching new gems... check back in 24h."
 
             # Format the news blocks with Google Search links
             blocks = content.split('\n')
