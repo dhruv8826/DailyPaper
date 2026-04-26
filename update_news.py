@@ -33,6 +33,7 @@ def get_gemini_news(prompt, max_retries=5):
     for attempt in range(max_retries):
         try:
             print(f"Attempt {attempt + 1}/{max_retries}...")
+            print(f"prompt triggerring: {prompt}")
             response = client.models.generate_content(
                 model=model_id,
                 contents=prompt,
@@ -43,6 +44,7 @@ def get_gemini_news(prompt, max_retries=5):
             # Robust JSON extraction
             match = re.search(r'\{.*\}', response.text, re.DOTALL)
             if match:
+                print(f"response: {match}")
                 return json.loads(match.group())
         except Exception as e:
             print(f"Retry {attempt+1}: {e}")
