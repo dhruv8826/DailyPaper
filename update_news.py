@@ -128,12 +128,18 @@ def main():
         include_gems_instruction = ""
         if (should_upd(data, "daily_gems", 24) or has_no_gems):
             include_gems_instruction = """
-            [[GEMS]]: Perform deep qualitative research and find 5 'Undervalued Indian Gems' ONLY. 
+            Perform deep qualitative research and find 5 'Undervalued Indian Gems' ONLY. 
             STRICT CRITERIA: Must be listed on NSE/BSE.
             Focus on hidden companies or companies that are in news or have something great happening suddenly. 
             Prioritize low P/E stocks benefiting from the recent policies of the Indian government
             like 'Make in India' PLI schemes, etc. Provide 1-sentence logic per stock. No disclaimers.
-            Format each as: 'Company Name (TICKER): 1-sentence qualitative investment logic.
+
+            OUTPUT FORMAT:
+            '''
+            "GEMS": ["stock1 info", "stock2 info", ...]
+            '''
+
+            Format each stock info as: 'Company Name (TICKER): 1-sentence qualitative investment logic.'
             """
 
         mega_prompt = f"""
@@ -146,7 +152,6 @@ def main():
         [[MISC]]: Top 10 Sports (IPL/T20) or Entertainment stories.
         [[LIVE_UPDATE]]: 1-sentence summary of: {data['page8_topic']}.
         [[NEW_TOPIC]]: Only provide if a new massive topic has emerged.
-        {include_gems_instruction}
 
         JSON OUTPUT FORMAT:
         {{
@@ -156,13 +161,19 @@ def main():
             "INDIA": ["story1", "story2", ...],
             "MISC": ["story1", "story2", ...],
             "LIVE_UPDATE": "text",
-            "NEW_TOPIC": "text or null",
-            "GEMS": ["stock1 info", "stock2 info", ...]
+            "NEW_TOPIC": "text or null"
         }}
         """
 
         news_json = get_gemini_news(mega_prompt)
+        
         if news_json:
+            # We call gems_json info only when news_json was successful
+            if include_gems_instruction != "":
+                gems_json = get_gemini_news(include_gems_instruction)
+                if ems_json and "GEMS" in gems_json:
+                    news_json["GEMS"] = gems_json["GEMS"]
+            
             # We preserve the old GEMS if the new response doesn't include them
             if not news_json.get("GEMS"):
                 news_json["GEMS"] = data.get("sections", {}).get("GEMS", [])
